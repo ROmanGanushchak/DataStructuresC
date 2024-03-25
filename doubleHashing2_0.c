@@ -1,9 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// Get-Content input.txt | .\doubleHashing2_0.exe | Out-File output.txt
+// cmd.exe /c "doubleHashing2_0.exe < input.txt > output.txt"
+
 #define DELETED ((void*) 1)
-#define maxFilledTable 0.65
-#define maxNonEmptyTable 0.75
+#define maxFilledTable 0.75
+#define maxNonEmptyTable 0.85
 #define elementsInSegment 128
 #define max(x, y) (((x) > (y)) ? (x) : (y))
 #define printStr(s, isP) do { \
@@ -19,11 +22,8 @@ typedef struct hashElem {
     char name[16];
     char surname[16];
     char date[12];
-    int length;
-    double balance;
-    
-    unsigned int indexHash;
-    unsigned int adderHash;
+    // int length;
+    int balance[2];
 } HashElem;
 
 char cmpstr(char *str1, char*str2) {
@@ -39,8 +39,8 @@ char cmpstr(char *str1, char*str2) {
 }
 
 char cmpdata(HashElem *data1, HashElem *data2) {
-    if (data1->length != data2->length) 
-        return 0;
+    // if (data1->length != data2->length) 
+    //     return 0;
     
     if (cmpstr(data1->name, data2->name) && cmpstr(data1->surname, data2->surname) && cmpstr(data1->date, data2->date))
         return 1;
@@ -55,7 +55,7 @@ int lenstr(char *s) {
 
 void scandata(HashElem *data) {
     scanf("%s %s %s", data->name, data->surname, data->date);
-    data->length = lenstr(data->name) + lenstr(data->surname) + lenstr(data->date);
+    // data->length = lenstr(data->name) + lenstr(data->surname) + lenstr(data->date);
 }
 
 void scanDataBalane(HashElem *data, char *buffer) {
@@ -80,14 +80,14 @@ typedef struct hashTable {
 } HashTable;
 
 int findNextPrime(int number) {
-    number = number / 6 * 6 + 1;
+    number = number / 6 * 6 + 7;
     char isDivided=1;
 
     for (unsigned int divider, adder, num;; number+=6) {
         for (adder=0; adder<5; adder += 4) {
             num = number + adder;
             isDivided=0;
-            for (divider=3; divider*divider <= num; divider += 2) {
+            for (divider=5; divider*divider <= num; divider += 2) {
                 if (num % divider == 0) {
                     isDivided=1; 
                     break;
@@ -100,10 +100,13 @@ int findNextPrime(int number) {
 }
 
 unsigned int hash1(HashElem data) {
-    unsigned int hash = constants[data.date[0] % constantsCount], current;
-    char rotate = data.surname[0] % 4;
-    char rotate1 = data.date[2] % 3;
-    char rotate2 = data.date[3] % 3;
+    unsigned int hash = constants[data.date[0] % constantsCount], current, dataHash=0;
+    for (int i=0; data.date[i] != '\0'; i++)
+        dataHash += data.date[i];
+
+    char rotate = dataHash % 5;
+    char rotate1 = dataHash % 9;
+    char rotate2 = dataHash % 7;
 
     for (char i=0, j; data.name[i] != '\0'; i++) {
         current = 0;
@@ -117,8 +120,8 @@ unsigned int hash1(HashElem data) {
         hash ^= current << rotate1;
         hash ^= current >> rotate2;
     }
-
-    return hash ^ (data.surname[1] << (data.length % 24));
+    
+    return hash;
 }
 
 unsigned int hash2(HashElem data) {
@@ -140,19 +143,17 @@ void resizeTable(HashTable *hashTable, int newLength) {
     hashTable->length = newLength;
     hashTable->deleted = 0;
     
-    HashElem **newTable = (HashElem **) malloc (newLength * sizeof(HashElem*));
-    for (int i=0; i<newLength; i++) {
-        newTable[i] = NULL;
-    }
+    HashElem **newTable = (HashElem **) calloc (newLength, sizeof(HashElem*));
+    if (newTable == NULL) exit(1);
 
     for (int i=0; i<oldLength; i++) {
         if (hashTable->table[i] == NULL || hashTable->table[i] == DELETED)
             continue;
         
-        index = transformHash1(hashTable->table[i]->indexHash, *hashTable);
-        adder = transformHash2(hashTable->table[i]->adderHash, *hashTable);
+        index = transformHash1(hash1(*hashTable->table[i]), *hashTable);
+        adder = transformHash2(hash2(*hashTable->table[i]), *hashTable);
 
-        for (;; index = (index + adder) % newLength) {
+        for (;; index = (index + adder) % hashTable->length) {
             if (newTable[index] == NULL) {
                 newTable[index] = hashTable->table[i];
                 break;
@@ -166,22 +167,16 @@ void resizeTable(HashTable *hashTable, int newLength) {
 
 char add(HashElem *data, HashTable *hashTable) {
     HashElem **table = hashTable->table;
-    unsigned int indexHash = hash1(*data);
-    unsigned int adderHash = hash2(*data);
-
-    unsigned int index = transformHash1(indexHash, *hashTable);
-    unsigned int adder = transformHash2(adderHash, *hashTable);
+    unsigned int index = transformHash1(hash1(*data), *hashTable);
+    unsigned int adder = transformHash2(hash2(*data), *hashTable);
     char result;
     
-    while (1) {
+    for (;; index = (index + adder) % hashTable->length) {
         if (table[index] == NULL || table[index] == DELETED) {
             if (table[index] == DELETED) 
                 hashTable->deleted--;
             
             hashTable->table[index] = data;
-
-            hashTable->table[index]->indexHash = indexHash;
-            hashTable->table[index]->adderHash = adderHash;
 
             hashTable->filled++;
             result = 1;
@@ -192,14 +187,12 @@ char add(HashElem *data, HashTable *hashTable) {
             result = 0;
             break;
         }
-
-        index = (index + adder) % hashTable->length;
     }
 
     if (hashTable->filled / ((float)hashTable->length) > maxFilledTable)
-        resizeTable(hashTable, hashTable->length*1.7);
+        resizeTable(hashTable, hashTable->length*1.4);
     else if ((hashTable->filled) / hashTable->length > maxNonEmptyTable)
-        resizeTable(hashTable, hashTable->length*1.2);
+        resizeTable(hashTable, hashTable->length*1.1);
     
     return result;
 }
@@ -219,11 +212,8 @@ int findIndex(HashElem *data, HashTable hashTable) {
 
 int main() {
     HashTable hashTable = {.filled=0, .deleted=0, .length=101}; 
-    hashTable.table = (HashElem**) malloc (hashTable.length * sizeof(HashElem*));
+    hashTable.table = (HashElem**) calloc (hashTable.length, sizeof(HashElem*));
     hashTable.segmentCount = max(1, hashTable.length / elementsInSegment);
-    for (int i=0; i<hashTable.length; i++) {
-        hashTable.table[i] = NULL;
-    }
     HashTable *hashTableP = &hashTable;
 
     char type, buffer[32], isPrinted=0;
@@ -238,6 +228,7 @@ int main() {
                 scanDataBalane(data, buffer);
                 add(data, hashTableP);
                 data = (HashElem*) malloc (sizeof(HashElem));
+                if (data == NULL) exit(1);
                 break;
             
             case 's':
@@ -267,7 +258,6 @@ int main() {
                 scandata(dataHolder);
                 scanDataBalane(dataHolder, buffer);
                 index = findIndex(dataHolder, hashTable);
-
                 if (index == -1 || hashTable.table[index]->balance + dataHolder->balance < 0) 
                     printStr("update failed", isPrinted);
                 else 
