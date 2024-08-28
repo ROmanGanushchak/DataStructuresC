@@ -39,9 +39,6 @@ char cmpstr(char *str1, char*str2) {
 }
 
 char cmpdata(HashElem *data1, HashElem *data2) {
-    // if (data1->length != data2->length) 
-    //     return 0;
-    
     if (cmpstr(data1->name, data2->name) && cmpstr(data1->surname, data2->surname) && cmpstr(data1->date, data2->date))
         return 1;
     return 0;
@@ -55,7 +52,6 @@ int lenstr(char *s) {
 
 void scandata(HashElem *data) {
     scanf("%s %s %s", data->name, data->surname, data->date);
-    // data->length = lenstr(data->name) + lenstr(data->surname) + lenstr(data->date);
 }
 
 void scanDataBalane(HashElem *data, char *buffer) {
@@ -180,8 +176,8 @@ char add(HashElem *data, HashTable *hashTable) {
     
     for (;; index = (index + adder) % hashTable->length) {
         count++;
-        if (debugPrint) printf("\nindex -> %d ", index);
         if (debugPrint) {
+            printf("\nindex -> %d ", index);
             if (table[index] == NULL) printf("null ");
             else if (table[index] == DELETED) printf("deleted ");
             else printf("%s %s ", table[index]->name, table[index]->surname);
@@ -261,7 +257,8 @@ int main() {
             case 's':
                 scandata(dataHolder);
                 index = findIndex(dataHolder, hashTable);
-                if (debugPrint) printf("next i %s %s %s -> ", dataHolder->name, dataHolder->surname, dataHolder->date);
+                if (debugPrint) 
+                    printf("next i %s %s %s -> ", dataHolder->name, dataHolder->surname, dataHolder->date);
 
                 if (index == -1) {
                     printStr("search failed", isPrinted);
@@ -286,7 +283,8 @@ int main() {
             case 'u':
                 scandata(dataHolder);
                 scanDataBalane(dataHolder, buffer);
-                if (debugPrint) printf("next i %s %s %s %lf -> ", dataHolder->name, dataHolder->surname, dataHolder->date, dataHolder->balance);
+                if (debugPrint) 
+                    printf("next i %s %s %s %lf -> ", dataHolder->name, dataHolder->surname, dataHolder->date, dataHolder->balance);
                 index = findIndex(dataHolder, hashTable);
                 if (index == -1 || hashTable.table[index]->balance + dataHolder->balance < 0) 
                     printStr("update failed", isPrinted);
