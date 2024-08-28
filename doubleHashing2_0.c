@@ -1,9 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// Get-Content input.txt | .\doubleHashing2_0.exe | Out-File output.txt
-// cmd.exe /c "doubleHashing2_0.exe < input.txt > output.txt"
-
+#define debugPrint ((int)0)
 #define DELETED ((void*) 1)
 #define maxFilledTable 0.75
 #define maxNonEmptyTable 0.85
@@ -15,15 +13,17 @@
     (isP) = 1; \
 } while(0)
 
+int outputIndex = 1;
 const unsigned int constants[] = {0xc34fd239, 0x1ba5c3ca, 0x59843dac, 0xfc32a78f, 0xa77b8fcb, 0x802ffac, 0xacf194dd, 0x05fceab1};
 const unsigned int constantsCount = 8;
+long long count = 0;
 
 typedef struct hashElem {
     char name[16];
     char surname[16];
     char date[12];
     // int length;
-    int balance[2];
+    double balance;
 } HashElem;
 
 char cmpstr(char *str1, char*str2) {
@@ -117,15 +117,19 @@ unsigned int hash1(HashElem data) {
         i--;
         hash <<= rotate;
         hash ^= current;
-        hash ^= current << rotate1;
-        hash ^= current >> rotate2;
+        hash ^= current << rotate1 | current >> rotate2;
     }
-    
+    if (debugPrint) printf("hash1>%u ", hash);
     return hash;
 }
 
 unsigned int hash2(HashElem data) {
-    return constants[data.date[4]%constantsCount] ^ ((data.surname[0] << 8) + data.date[0]);
+    unsigned int surHash=0;
+    for (int i=0; data.surname[i] != '\0'; i++) 
+        surHash += data.surname[i];
+    
+    if (debugPrint) printf("hash2>%u ", (constants[surHash%constantsCount] ^ ((surHash << (surHash % 16)) | surHash)));
+    return constants[surHash%constantsCount] ^ ((surHash << (surHash % 16)) | surHash);
 }
 
 unsigned int transformHash1(unsigned int hash, HashTable hashTable) {
@@ -137,6 +141,7 @@ unsigned int transformHash2(unsigned int hash, HashTable hashTable) {
 }
 
 void resizeTable(HashTable *hashTable, int newLength) {
+    if (debugPrint) printf("\n--------RESIZE--------\n");
     unsigned int index, adder, oldLength = hashTable->length;
     newLength = findNextPrime(newLength);
     hashTable->segmentCount = max(1, hashTable->length / elementsInSegment);
@@ -144,6 +149,7 @@ void resizeTable(HashTable *hashTable, int newLength) {
     hashTable->deleted = 0;
     
     HashElem **newTable = (HashElem **) calloc (newLength, sizeof(HashElem*));
+
     if (newTable == NULL) exit(1);
 
     for (int i=0; i<oldLength; i++) {
@@ -170,31 +176,44 @@ char add(HashElem *data, HashTable *hashTable) {
     unsigned int index = transformHash1(hash1(*data), *hashTable);
     unsigned int adder = transformHash2(hash2(*data), *hashTable);
     char result;
+    int indexToAdd = -1;
     
     for (;; index = (index + adder) % hashTable->length) {
-        if (table[index] == NULL || table[index] == DELETED) {
-            if (table[index] == DELETED) 
-                hashTable->deleted--;
-            
-            hashTable->table[index] = data;
-
-            hashTable->filled++;
-            result = 1;
-            break;
+        count++;
+        if (debugPrint) printf("\nindex -> %d ", index);
+        if (debugPrint) {
+            if (table[index] == NULL) printf("null ");
+            else if (table[index] == DELETED) printf("deleted ");
+            else printf("%s %s ", table[index]->name, table[index]->surname);
         }
 
-        if (cmpdata(data, table[index])) {
-            result = 0;
+        if (table[index] == NULL) {
+            if (indexToAdd == -1)
+                indexToAdd = index;
+            break;
+        } else if (table[index] == DELETED) {
+            if (indexToAdd == -1)
+                indexToAdd = index;
+        } else if (cmpdata(data, table[index])) {
+            indexToAdd = -1;
             break;
         }
     }
 
-    if (hashTable->filled / ((float)hashTable->length) > maxFilledTable)
-        resizeTable(hashTable, hashTable->length*1.4);
-    else if ((hashTable->filled) / hashTable->length > maxNonEmptyTable)
-        resizeTable(hashTable, hashTable->length*1.1);
+    if (indexToAdd == -1) return 0;
+
+    if (table[indexToAdd] == DELETED) 
+        hashTable->deleted--;
+    hashTable->table[indexToAdd] = data;
+    hashTable->filled++;
+
+    if (hashTable->filled / ((float)hashTable->length) > maxFilledTable) {
+        if (debugPrint) printf("\n--RESIZECALLED--\n");
+        resizeTable(hashTable, hashTable->length*1.45);
+    }else if ((hashTable->filled+hashTable->deleted) / hashTable->length > maxNonEmptyTable)
+        resizeTable(hashTable, hashTable->length*1);
     
-    return result;
+    return 1;
 }
 
 int findIndex(HashElem *data, HashTable hashTable) {
@@ -202,6 +221,7 @@ int findIndex(HashElem *data, HashTable hashTable) {
     unsigned int adder = transformHash2(hash2(*data), hashTable);
 
     for (;; index = (index + adder) % hashTable.length) {
+        count++;
         if (hashTable.table[index] == NULL)
             return -1;
 
@@ -211,7 +231,7 @@ int findIndex(HashElem *data, HashTable hashTable) {
 }
 
 int main() {
-    HashTable hashTable = {.filled=0, .deleted=0, .length=101}; 
+    HashTable hashTable = {.filled=0, .deleted=0, .length=7}; 
     hashTable.table = (HashElem**) calloc (hashTable.length, sizeof(HashElem*));
     hashTable.segmentCount = max(1, hashTable.length / elementsInSegment);
     HashTable *hashTableP = &hashTable;
@@ -222,23 +242,31 @@ int main() {
     HashElem *dataHolder = (HashElem*) malloc (sizeof(HashElem));
 
     while (scanf("%c ", &type) != EOF) {
+        printf("Type -> %c", type);
         switch (type) {
             case 'i':
                 scandata(data);
                 scanDataBalane(data, buffer);
-                add(data, hashTableP);
-                data = (HashElem*) malloc (sizeof(HashElem));
-                if (data == NULL) exit(1);
+                if (debugPrint) printf("next i %s %s %s %lf -> ", data->name, data->surname, data->date, data->balance);
+
+                if (!add(data, hashTableP)) {
+                    printStr("insert failed", isPrinted);
+                } else {
+                    data = (HashElem*) malloc (sizeof(HashElem));
+                    if (data == NULL) exit(1);
+                }
+                if (debugPrint) printf("\n");
                 break;
             
             case 's':
                 scandata(dataHolder);
                 index = findIndex(dataHolder, hashTable);
+                if (debugPrint) printf("next i %s %s %s -> ", dataHolder->name, dataHolder->surname, dataHolder->date);
 
                 if (index == -1) {
                     printStr("search failed", isPrinted);
                 } else {
-                    temp = (int) hashTable.table[index]->balance;
+                    temp = (int) (hashTable.table[index]->balance+0.005);
                     if (isPrinted) {
                         printf("\n%d,", temp);
                     } else {
@@ -247,26 +275,30 @@ int main() {
                     }
 
                     decimal = (int)((hashTable.table[index]->balance - temp) * 100 + 0.5);
-                    if (hashTable.table[index]->balance - temp < 0.1) 
+                    if (decimal < 10) 
                         printf("0%d", decimal);
                     else
                         printf("%d", decimal);
                 }
+                if (debugPrint) printf("\n");
                 break;
             
             case 'u':
                 scandata(dataHolder);
                 scanDataBalane(dataHolder, buffer);
+                if (debugPrint) printf("next i %s %s %s %lf -> ", dataHolder->name, dataHolder->surname, dataHolder->date, dataHolder->balance);
                 index = findIndex(dataHolder, hashTable);
                 if (index == -1 || hashTable.table[index]->balance + dataHolder->balance < 0) 
                     printStr("update failed", isPrinted);
                 else 
                     hashTable.table[index]->balance += dataHolder->balance;
                 
+                if (debugPrint) printf("\n");
                 break;
             
             case 'd':
                 scandata(dataHolder);
+                if (debugPrint) printf("next i %s %s %s -> ", dataHolder->name, dataHolder->surname, dataHolder->date);
                 index = findIndex(dataHolder, hashTable);
 
                 if (index == -1) 
@@ -277,12 +309,20 @@ int main() {
                     hashTable.filled--;
                     hashTable.deleted++;
                 }
+                if (debugPrint) printf("\n");
                 break;
+            case 'f':
+                return 0;
         }
     }
 
     free(data);
     free(dataHolder);
+    for (int i=0; i<hashTable.length; i++) {
+        if (hashTable.table[i] != NULL && hashTable.table[i] != DELETED)
+            free(hashTable.table[i]);
+    }
+    printf("Count -> %d", count);
     free(hashTable.table);
     return 0;
 }
