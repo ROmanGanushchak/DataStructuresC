@@ -10,9 +10,9 @@ public:
     vector<ll> v;
     void init(const vector<ll>& arr) {
         ll _n = (ll) arr.size();
-        n = (_n & -_n) << ((_n & -_n) != _n);
+        for (n = 1; n < _n; n <<= 1);
         v.resize(n + arr.size());
-        for (int i=0; i<arr.size(); i++)
+        for (int i=0; i<_n; i++)
             v[i+n] = arr[i];
         for (int i=n-1; i>=1; i--) 
             v[i] = v[2*i] + v[2*i+1];

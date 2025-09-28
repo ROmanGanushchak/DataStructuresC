@@ -18,9 +18,6 @@ int knapsack(const vector<int>& a, int k) {
         return knapsack<min(MAX_K, maxn*2)>(a, k);
     }
     int n = a.size();
-    bitset<maxn> set;
-    set.reset();
-    set[0] = 1;
     int sum = 0;
     for (int i=0; i<a.size(); i++)
         sum += a[i];
@@ -49,6 +46,8 @@ int knapsack(const vector<int>& a, int k) {
             to_add.push_back(remained * i);
     }
 
+    bitset<maxn> set;
+    set[0] = 1;
     for (int v : to_add) {
         set |= set << v;
     }
@@ -63,6 +62,6 @@ int knapsack(const vector<int>& a, int k) {
 }
 
 int main() {
-    vector<int> a = {1, 1, 1, 1, 1, 1, 1};
-    printf("%d\n", knapsack<1>(a, 1000));
+    vector<int> a = {2, 4, 8, 16, 32, 64, 128, 256, 512};
+    printf("%d\n", knapsack<1>(a, 1));
 }

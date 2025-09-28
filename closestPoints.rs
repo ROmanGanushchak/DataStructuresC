@@ -25,7 +25,7 @@ fn lower_bound(x: &Vec<Point>, val: i32, mut l: usize, mut r: usize) -> usize {
             r = m;
         }
     }
-    return l;
+    l
 }
 
 impl Solution {
