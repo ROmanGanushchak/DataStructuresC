@@ -30,6 +30,23 @@ private:
         v[i] = max(v[2*i], v[2*i+1]); // !
     }
 
+    // assumes that there is always at least one negative value, for min_seg only
+    int first_neg(int l, int r, int i) {
+        push(i, l, r);
+        if (l == r) {
+            assert(v[i] < 0);
+            return l;
+        }
+        int m = (l + r) >> 1;
+        int ans;
+        if (v[2*i]+lazy[2*i] < 0)
+            ans = first_neg(l, m, 2*i);
+        else
+            ans = first_neg(m+1, r, 2*i+1);
+        v[i] = min(v[2*i]+lazy[2*i], v[2*i+1]+lazy[2*i+1]);
+        return ans;
+    }
+
     ll get_max(int ql, int qr, int i, int l, int r) {
         push(i, l, r);
         if (l >= ql && r <= qr)
@@ -54,16 +71,12 @@ public:
             v[i+n] = arr[i];
         fill(v.begin() + n + arr.size(), v.end(), LLONG_MIN);
         for (int i=n-1; i>=1; i--)
-            v[i] = max(v[2*i], v[2*i+1]);
+            v[i] = max(v[2*i], v[2*i+1]); // !
     }
 
-    ll get_max(int ql, int qr) {
-        return get_max(ql, qr, 1, 0, n-1);
-    }
-
-    void update(int ql, int qr, ll add) {
-        update(ql, qr, 1, 0, n-1, add);
-    }
+    int first_neg() { return first_neg(0, n-1, 1); }
+    ll get_max(int ql, int qr) { return get_max(ql, qr, 1, 0, n-1); }
+    void update(int ql, int qr, ll add) { update(ql, qr, 1, 0, n-1, add); }
 };
 
 int main() {

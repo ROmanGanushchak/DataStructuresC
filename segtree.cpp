@@ -11,7 +11,7 @@ public:
     void init(const vector<ll>& arr) {
         ll _n = (ll) arr.size();
         for (n = 1; n < _n; n <<= 1);
-        v.resize(n + arr.size());
+        v.resize(2*n);
         for (int i=0; i<_n; i++)
             v[i+n] = arr[i];
         for (int i=n-1; i>=1; i--) 

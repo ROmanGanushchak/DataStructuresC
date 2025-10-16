@@ -4,7 +4,6 @@
 #include <string.h>
 #include <math.h>
 
-
 #define REALLOCK_ADDER 4
 #define ll long long
 #define uint unsigned int
