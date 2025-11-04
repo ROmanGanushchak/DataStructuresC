@@ -1,0 +1,4 @@
+pygments
+reportlab
+beautifulsoup4
+lxml
