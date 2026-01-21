@@ -21,21 +21,28 @@ public:
     }
 
     void update(int k, int val) {
-        k++;
-        while (k <= a.size()) {
+        for (k++; k < a.size(); k += k & -k)
             a[k] += val;
-            k += k & -k;
-        }
     }
 
     ll get(int k) {
-        k++;
         ll res = 0;
-        while (k >= 1) {
+        for (k++; k >= 1; k -= k & -k)
             res += a[k];
-            k -= k & -k; 
-        }
         return res;
+    }
+
+    // returns the first index in array where prefix_sum of array is bigger than provided prefix_sum
+    int binary_lifting(ll prefix_sum) {
+        int num = 0;
+        ll sum = 0;
+        for (int i=30; i>=0; i--) {
+            if ((num + (1 << i) < a.size()) && (sum + a[num + (1 << i)] <= prefix_sum)) {
+                num += (1 << i);
+                sum += a[num];
+            }
+        }
+        return num;
     }
 
     void print() {
@@ -47,9 +54,11 @@ public:
 };
 
 int main() {
-    vector<ll> arr = {1, 3, 4, 8, 6, 1, 4, 2};
+    vector<ll> arr = {1, 3, 4, 0, 0, 6, 1, 4, 2};
     BinaryIndexedTree tree;
     tree.init(arr);
+    printf("%d\n", tree.binary_lifting(8));
+    return 0;
     tree.update(6, 3);
     printf("1: %lld\n", tree.get(6));
 }
