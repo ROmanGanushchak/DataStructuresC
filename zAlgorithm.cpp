@@ -1,10 +1,8 @@
-#include <vector>
-#include <string>
-using namespace std;
+#include "types.h"
 
-vector<int> z_function(string s) {
+Vi z_function(string& s) {
     int n = s.size();
-    vector<int> z(n);
+    Vi z(n);
     int l = 0, r = 0;
     for(int i = 1; i < n; i++) {
         if(i < r) 
