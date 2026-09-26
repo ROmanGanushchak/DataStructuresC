@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <algorithm>
 #include <vector>
+#include <bitset>
 using namespace std;
 
 /* given multiset of numbers finds the closest smaller number to k that 
