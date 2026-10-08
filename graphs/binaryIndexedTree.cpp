@@ -32,7 +32,7 @@ public:
         return res;
     }
 
-    // returns the first index in array where prefix_sum of array is bigger than provided prefix_sum
+    // returns the first index in array where prefix_sum of array is bigger than provided prefix_sum, assumes non-negative values
     int binary_lifting(ll prefix_sum) {
         int num = 0;
         ll sum = 0;

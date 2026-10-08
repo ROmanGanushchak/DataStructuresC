@@ -37,6 +37,7 @@ void dijkstra() {
     priority_queue<pair<int, int>> q;
 
     int start = 0;
+    dist[start] = 0;
     q.push({0, start});
     while (q.size()) {
         int e = q.top().second; q.pop();
