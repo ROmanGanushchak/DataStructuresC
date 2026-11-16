@@ -14,9 +14,7 @@ using namespace std;
 #define MAX_K 200001
 template<int maxn>
 int knapsack(const vector<int>& a, int k) {
-    if (maxn <= k+1) {
-        return knapsack<min(MAX_K, maxn*2)>(a, k);
-    }
+    if (maxn <= k+1) return knapsack<min(MAX_K, maxn*2)>(a, k);
     int n = a.size();
     int sum = 0;
     for (int i=0; i<a.size(); i++)

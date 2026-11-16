@@ -15,7 +15,13 @@ import html
 
 folder = "../"
 output_pdf = "merged_cpp_files.pdf"
-cpp_files = [f for f in os.listdir(folder) if f.endswith(".cpp")]
+subfolders = ["", "dp", "graphs", "written"]
+cpp_files = [
+    os.path.join(sub, f)
+    for sub in subfolders
+    for f in sorted(os.listdir(os.path.join(folder, sub)))
+    if f.endswith((".cpp", ".c"))
+]
 print(cpp_files)
 
 class CounterDoc(SimpleDocTemplate):

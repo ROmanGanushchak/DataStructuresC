@@ -21,6 +21,7 @@ using Vl = V<ll>;
 using Vb = V<bool>;
 using Vii = V<pii>;
 #define fori(n) for (int i=0; i<n; i++)
+#define forn(i, n) for (int i=0; i<n; i++)
 void scan(pii& a) { scanf("%d %d", &a.F, &a.S); }
 void scan(Vi& a) { for (int i=0; i<a.size(); i++) scanf("%d", &a[i]); }
 void scan(Vl& a) { for (int i=0; i<a.size(); i++) scanf("%lld", &a[i]); }

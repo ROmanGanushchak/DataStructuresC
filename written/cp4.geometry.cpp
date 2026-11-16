@@ -32,10 +32,11 @@ struct line { double a, b, c; };
 void pointsToLine(const point &p1, const point &p2, line &l) {
     if (fabs(p1.x-p2.x) < EPS) // vertical line
         l = {1.0, 0.0, -p1.x}; // default values
-    else
-        l = {-(double)(p1.y-p2.y) / (p1.x-p2.x),
-        1.0, // IMPORTANT: b = 1.0
-        -(double)(l.a*p1.x) - p1.y};
+    else {
+        l.a = -(double)(p1.y-p2.y) / (p1.x-p2.x);
+        l.b = 1.0; // IMPORTANT: b = 1.0
+        l.c = -(double)(l.a*p1.x) - p1.y;
+    }
 }
 bool areParallel(line l1, line l2) { // check a & b
     return (fabs(l1.a-l2.a) < EPS) && (fabs(l1.b-l2.b) < EPS);
@@ -117,7 +118,7 @@ double distToLineSegment(point p, point a, point b, point &c) {
 }
 
 // CIRCLE
-int insideCircle(const point &p, const point &c, double r) {
+int insideCircle(const point_i &p, const point_i &c, int r) {
     int dx = p.x-c.x, dy = p.y-c.y;
     int Euc = dx*dx + dy*dy, rSq = r*r; // all integer
     return Euc < rSq ? 1 : (Euc == rSq ? 0 : -1); // in/border/out
@@ -144,6 +145,7 @@ bool circle2PtsRad(point p1, point p2, double r, point &c) {
 
 // Poligon
 // returns the area of polygon P
+// P must be closed: the first point is repeated as the last one (P[0] == P[n-1])
 double area(const vector<point> &P) {
     double ans = 0.0;
     for (int i = 0; i < (int)P.size()-1; ++i) // Shoelace formula
@@ -153,6 +155,7 @@ double area(const vector<point> &P) {
 
 // returns true if we always make the same turn
 // while examining all the edges of the polygon one by one
+// P must be closed: the first point is repeated as the last one (P[0] == P[n-1])
 bool isConvex(const vector<point> &P) {
     int n = (int)P.size();
     // a point/sz=2 or a line/sz=3 is not convex

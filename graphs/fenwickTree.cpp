@@ -4,7 +4,7 @@ using namespace std;
 /* A subarray sum dynamic data structure */
 
 #define ll long long
-class BinaryIndexedTree {
+class FenwickTree {
 public:
     vector<ll> a;
     void init(vector<ll>& arr) {
@@ -55,7 +55,7 @@ public:
 
 int main() {
     vector<ll> arr = {1, 3, 4, 0, 0, 6, 1, 4, 2};
-    BinaryIndexedTree tree;
+    FenwickTree tree;
     tree.init(arr);
     printf("%d\n", tree.binary_lifting(8));
     return 0;
