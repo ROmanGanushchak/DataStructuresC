@@ -1,17 +1,17 @@
-#include <bits/stdc++.h>
-#include <cstdio>
-#include <assert.h>
-#include <iostream>
-#include <sstream>
-using namespace std;
+#include "types.h"
 
 mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());
-int main() {
+int get_random() {
     int min = 0, max = 10;
-    printf("%d\n", rng() % (max - min + 1) + min);
+    return rng() % (max - min + 1) + min;
 }
 
-void _main() {
+void remove_duplicates(vector<int> e) {
+    sort(all(e)); 
+    e.erase(unique(all(e)), e.end());
+}
+
+void fast_in() {
     int n; scanf("%d", &n);
     std::ostringstream buffer;
     buffer << n-1 << "\n";
